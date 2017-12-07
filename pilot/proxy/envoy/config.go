@@ -218,7 +218,7 @@ func buildSidecarListenersClusters(
 		listeners = append(listeners, outbound...)
 		clusters = append(clusters, outClusters...)
 	} else if mesh.ProxyListenPort > 0 {
-		inbound, inClusters := buildInboundListeners(mesh, node, instances, config)
+		inbound, inClusters := buildInboundListeners(mesh, node, instances, services, config)
 		outbound, outClusters := buildOutboundListeners(mesh, node, instances, services, config)
 		mgmtListeners, mgmtClusters := buildMgmtPortListeners(mesh, managementPorts, node.IPAddress)
 
@@ -277,7 +277,7 @@ func buildSidecarListenersClusters(
 			httpOutbound.clusters()...)
 		listeners = append(listeners,
 			buildHTTPListener(mesh, node, instances, nil, listenAddress, int(mesh.ProxyHttpPort),
-				RDSAll, useRemoteAddress, traceOperation, config))
+				RDSAll, useRemoteAddress, traceOperation, config, nil))
 		// TODO: need inbound listeners in HTTP_PROXY case, with dedicated ingress listener.
 	}
 
@@ -329,8 +329,11 @@ func buildRDSRoute(mesh *meshconfig.MeshConfig, node proxy.Node, routeName strin
 // Set RDS parameter to a non-empty value to enable RDS for the matching route name.
 func buildHTTPListener(mesh *meshconfig.MeshConfig, node proxy.Node, instances []*model.ServiceInstance,
 	routeConfig *HTTPRouteConfig, ip string, port int, rds string, useRemoteAddress bool, direction string,
-	store model.IstioConfigStore) *Listener {
+	store model.IstioConfigStore, extrafilters []HTTPFilter) *Listener {
 	filters := buildFaultFilters(routeConfig)
+	if extrafilters != nil {
+		filters = append(filters, extrafilters...)
+	}
 
 	filters = append(filters, HTTPFilter{
 		Type:   decoder,
@@ -519,7 +522,7 @@ func buildOutboundListeners(mesh *meshconfig.MeshConfig, sidecar proxy.Node, ins
 		}
 
 		l := buildHTTPListener(mesh, sidecar, instances, routeConfig, WildcardAddress, port,
-			fmt.Sprintf("%d", port), useRemoteAddress, operation, config)
+			fmt.Sprintf("%d", port), useRemoteAddress, operation, config, nil)
 		listeners = append(listeners, l)
 		clusters = append(clusters, routeConfig.clusters()...)
 	}
@@ -698,7 +701,7 @@ func buildOutboundTCPListeners(mesh *meshconfig.MeshConfig, sidecar proxy.Node,
 // all inbound clusters since they are statically declared in the proxy
 // configuration and do not utilize CDS.
 func buildInboundListeners(mesh *meshconfig.MeshConfig, sidecar proxy.Node,
-	instances []*model.ServiceInstance, config model.IstioConfigStore) (Listeners, Clusters) {
+	instances []*model.ServiceInstance, services []*model.Service, config model.IstioConfigStore) (Listeners, Clusters) {
 	listeners := make(Listeners, 0, len(instances))
 	clusters := make(Clusters, 0, len(instances))
 
@@ -763,9 +766,12 @@ func buildInboundListeners(mesh *meshconfig.MeshConfig, sidecar proxy.Node,
 
 			host.Routes = append(host.Routes, defaultRoute)
 
+			squashfilter, squashcluster := buildSquashFiltersClusters(instance, services)
+			clusters = append(clusters, squashcluster...)
+
 			routeConfig := &HTTPRouteConfig{VirtualHosts: []*VirtualHost{host}}
 			listener = buildHTTPListener(mesh, sidecar, instances, routeConfig, endpoint.Address,
-				endpoint.Port, "", false, IngressTraceOperation, config)
+				endpoint.Port, "", false, IngressTraceOperation, config, squashfilter)
 
 		case model.ProtocolTCP, model.ProtocolHTTPS, model.ProtocolMongo, model.ProtocolRedis:
 			listener = buildTCPListener(&TCPRouteConfig{

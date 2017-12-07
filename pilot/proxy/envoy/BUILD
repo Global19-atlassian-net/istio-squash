@@ -14,6 +14,7 @@ go_library(
         "resources.go",
         "route.go",
         "watcher.go",
+        "squash.go",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -58,7 +59,6 @@ go_test(
         "@com_github_emicklei_go_restful//:go_default_library",
         "@com_github_golang_protobuf//ptypes:go_default_library",
         "@com_github_howeyc_fsnotify//:go_default_library",
-        "@io_istio_api//mesh/v1alpha1:go_default_library",
         "@io_istio_api//routing/v1alpha1:go_default_library",
     ],
 )
