@@ -39,6 +39,7 @@ const (
 	Authz = "authz"
 	// Envoyfilter is the name of the envoyfilter plugin passed through the command line
 	Envoyfilter = "envoyfilter"
+	Squash      = "squash"
 	// Health is the name of the health plugin passed through the command line
 	Health = "health"
 	// Mixer is the name of the mixer plugin passed through the command line

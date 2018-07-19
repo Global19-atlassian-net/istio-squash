@@ -108,6 +108,7 @@ var (
 		plugin.Authn,
 		plugin.Authz,
 		plugin.Envoyfilter,
+		plugin.Squash,
 		plugin.Health,
 		plugin.Mixer,
 	}

@@ -24,12 +24,14 @@ import (
 	"istio.io/istio/pilot/pkg/networking/plugin/envoyfilter"
 	"istio.io/istio/pilot/pkg/networking/plugin/health"
 	"istio.io/istio/pilot/pkg/networking/plugin/mixer"
+	"istio.io/istio/pilot/pkg/networking/plugin/squash"
 )
 
 var availablePlugins = map[string]plugin.Plugin{
 	plugin.Authn:       authn.NewPlugin(),
 	plugin.Authz:       authz.NewPlugin(),
 	plugin.Envoyfilter: envoyfilter.NewPlugin(),
+	plugin.Squash:      squash.NewPlugin(),
 	plugin.Health:      health.NewPlugin(),
 	plugin.Mixer:       mixer.NewPlugin(),
 }
