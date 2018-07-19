@@ -42,7 +42,7 @@ func (squashplugin) OnOutboundListener(in *plugin.InputParams, mutable *plugin.M
 // OnInboundListener implements the Callbacks interface method.
 func (squashplugin) OnInboundListener(in *plugin.InputParams, mutable *plugin.MutableObjects) error {
 
-	if in.ListenerProtocol != plugin.ListenerProtocolHTTP {
+	if in.ListenerType != plugin.ListenerTypeHTTP {
 		return nil
 	}
 
